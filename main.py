@@ -1,6 +1,127 @@
 import sympy  
 import random
 
+class Clause: 
+        def __init__(self, literals) -> None:
+            self.literals = literals
+    
+class Resolution_Alg:
+    def full_resolution(clause1, clause2, literal):
+       """# slide 29 of lecture 10 slides    """
+       reso = clause1.union(clause2)
+       reso -= {literal, ~literal}
+       for literals in clause1:
+            if ~literals in clause2 or (~literals in clause1 and literals in clause2): 
+                return True
+       return reso
+    
+    def __init__(self, initial_clauses) -> None:
+        self.literals = {} 
+        self.clauses = {} 
+        self.contradiction = False
+        
+        # Add all the initial clauses to the datastructure
+        for clause in initial_clauses:
+            self.add_clause(clause)
+        
+        
+    def add_clause(self, clause): 
+        # Make and add the new clause 
+        new_clause = Clause(clause)
+        self.clauses.add(new_clause)
+        
+        # Add the clause to the literals dictionary
+        for literal in clause: 
+            if literal in self.literals: 
+                self.literals[literal] = self.literals[literal].add(new_clause)
+            else: 
+                self.literals[literal] = {new_clause}
+    
+    def remove_clause(self, clause): 
+        if not clause in self.clauses: 
+            print("Trying to remove a clause that is not in the set of clauses") 
+            pass
+        
+        # Remove the reference to the clause from the literals dictionary
+        for literal in clause.literals: 
+            self.literals[literal] = self.literals[literal] - {clause}
+            if self.literals[literal] == set(): 
+                del self.literals[literal] 
+                
+        # Remove the clause form the set of clauses 
+        self.clauses = self.clauses - {clause}
+    
+    def unit_resolution(self): 
+        # Deal with the atomic clauses 
+        atomic_found = True
+        while atomic_found: # As removing an atomic literal can introduce new, we must do this until there are no more
+            atomic_found = False 
+            for clause in self.clauses: 
+                if len(clause.literals) == 1: 
+                    atomic_found = True 
+                    self.remove_atomic(clause.literals[0])
+                    
+    def remove_atomic(self, literal):
+        # The atomic must be true, hence all clauses containing it are removed
+        true_clauses = self.literals[literal]
+        for clause in true_clauses: 
+            # We must remove all references to the clause that is removed 
+            self.remove_clause(clause)
+        del self.literals[literal]
+        
+        # Next all clauses containing the negation of the atomic are updated 
+        clauses = self.literals[~literal]
+        for clause in clauses:
+            clause.literals = clause.literals - {~literal}
+            if clause.literals == set():
+                self.contradiction = True # If we get an empty clause, we have a contradiction and the clauses are unsatisfiable
+        del self.literals[~literal]
+    
+    def pop_literal(self):
+        # Find a pair where both the literal and its negation are in the set
+        next_literal = None
+        for literal in self.literals.keys():
+            if ~literal in self.literals.keys(): 
+                next_literal = literal
+                break 
+        
+        # If there is such a pair we are done
+        if next_literal == None: 
+            return True 
+        
+        # Else we must use resolution to remove it
+        to_remove = {}
+        for clause1 in self.literals[next_literal]:
+            for clause2 in self.literals[~next_literal]:
+                # Make the new clause 
+                resolution = Resolution_Alg.full_resolution(clause1, clause2)
+                if resolution == set(): 
+                    self.contradiction = True 
+                elif resolution != True: 
+                    self.add_clause(resolution)
+                
+                # remove the old clauses
+                to_remove = to_remove.add(clause2)
+            to_remove = to_remove.add(clause1)
+        
+        for clause in to_remove: 
+            self.remove_clause(clause)
+        
+        return False # To indicate that we have modified the clauses 
+        
+    def check_for_contradictions(self): 
+        # Check if any of the clauses are empty 
+        while not self.contradiction: 
+            self.unit_resolution() 
+            
+            if self.pop_literal(): 
+                break 
+        
+        return self.contradiction
+
+
+
+
 class Belief_Revisor():
     def to_cnf(expression): 
         """
@@ -9,26 +130,25 @@ class Belief_Revisor():
         # Make the set of clauses
         cnf = sympy.to_cnf(sympy.simplify(expression))
         disjunctions = set(cnf.args)
-        
+
         # Remove trivial clauses 
         to_remove = set()
         for clause in disjunctions: 
             if sympy.simplify(clause) == True: 
                 to_remove.add(clause)
         disjunctions = disjunctions - to_remove
-        
-        disjunctions = set(set(disjunction.args) for disjunction in disjunctions)
 
-        return disjunctions
-    
-    def full_resolution(clause1, clause2,literal):
-       """# slide 29 of lecture 10 slides    """
-       reso = clause1.union(clause2)
-       reso -= {literal, ~literal}
-       for literals in clause1:
-            if ~literals in clause2 or (~literals in clause1 and literals in clause2): 
-                return True
-       return reso
+        # disjunctions = [set(disjunction.args) for disjunction in disjunctions]
+        disjunction_sets = []
+        for disjunction in disjunctions:
+            # If disjunction is a single literal, wrap it in a set
+            if isinstance(disjunction, sympy.Symbol) or isinstance(disjunction, sympy.Not):
+                disjunction_sets.append({disjunction})
+            # If disjunction is a disjunction of literals, split it at "|" operators and convert to a set
+            else:
+                disjunction_sets.append(set(disjunction.args))
+
+        return disjunction_sets
 
     
     def __init__(self, initial_state) -> None:
@@ -81,82 +201,15 @@ class Belief_Revisor():
 
         for sentence in sorted_KB:
             cnf = Belief_Revisor.to_cnf(sentence)
-            temp = new_KB_cnf.union(cnf)
+            temp = new_KB_cnf + cnf
             reso = self.resolution_alg(temp)
             if reso == True: 
                 new_KB.add(sentence)
-                new_KB_cnf.union(cnf)
+                new_KB_cnf = temp
 
         # Remove sentences in KB that are not in new_KB
         self.KB = {key: value for key, value in self.KB.items() if key in new_KB}
-        
-
-
     
-    def resolution_alg(self, clauses):
-        """
-        Runs the resolution algorithm on the given clauses.
-        
-        Args:
-            clauses (set): set of clauses to be resolved
-        
-        Returns: 
-            valid (boolean): True if the clauses are satisfiable, False if a contradiction is found.
-        """
-        # Map of instances of each atomic variable 
-        clauses_map = {} 
-        atomic_clauses = []
-        for clause in clauses: 
-            for literal in clause.args: 
-                if literal in clauses_map: 
-                    clauses_map[literal] = clauses_map[literal].add(clause)
-                else: 
-                    clauses_map[literal] = set(clause)
-            if clause == clause.args:
-                atomic_clauses.append(clause)
-                    
-        while True: 
-            # First atomic clauses are removed 
-            for literal in atomic_clauses: 
-                # All clauses containing the literal are true and hence removed
-                for clause in clauses_map[literal]:
-                    clauses.remove(clause) # TODO update the clauses_map 
-                del clauses_map[literal]
-                for clause in clauses_map[~literal]:
-                    clauses.remove(clause) # TODO update the clauses_map 
-                    clauses.add(clause - ~literal)
-                
-            
-            next_literal = None 
-            # Find a pair where both the literal and its negation are in the set
-            for key in clauses_map.keys():
-                if ~key in clauses_map.keys(): 
-                    next_literal = key
-                    break 
-            
-            # If there is such a pair use resolution to remove it 
-            if next_literal: 
-                for clause1 in clauses_map[next_literal]:
-                    for clause2 in clauses_map[~next_literal]:
-                        # Make the new clause 
-                        reso = self.full_resolution(clause1, clause2)
-                        
-                        # Check if it is a trivial clause or empty clause 
-                        
-                        # TODO add this new clause to the clause set 
-                        clauses.add(reso)
-                        # TODO add this new clause to the count dictionary 
-                        
-                # TODO remove the clause from the count dictionary 
-                        
-                        else: 
-                            clauses.add(reso)
-                            for literal in reso.args: 
-                                if literal in clauses_map: 
-                                    clauses_map[literal] = clauses_map[literal].add(reso)
-                                else: 
-                                    clauses_map[literal] = set(reso)
-        
         
 
     def revision(self, new_sentence):
@@ -170,56 +223,6 @@ class Belief_Revisor():
         
         # Expand
         self.expansion(new_sentence)
-        
-    
-    def update(self, new_sentences):
-        """
-        # Take in new sentences 
-        # Make it CNF 
-        
-        # TODO maybe not? run contraction 
-        # TODO maybe not? run addition 
-        
-        # Just do this :
-        # new_KB = {new_clause}
-        # temp_clause = new_clause
-        # Sort the clauses in the KB by probability
-        # for clauses in the KB (sorted highest first): 
-            # resolution = Belief_Revisor.full_resolution(temp_clause, clause) 
-            # if resolution fails: continue 
-            # else: 
-                # temp_clause = resolution
-                # new_KB.add(clause)
-        # KB = new_KB
-        # recalculate_prior()
-        """
-        
-    
-        
-    
-
-
-    def resolution(self, new_clause): 
-        """
-        # Check if new_clause can be inferred from the KB 
-        # This is done like slide 41 of lecture 10 slides
-        # Convert new_clause to CNF
-        # resolution = not new_clause
-        # for clause in KB: 
-            # resolution = Belief_Revisor.full_resolution(clause, resolution)
-            # if resolution fails: return false 
-        # return true 
-        """
-        
-
-    def recalculate_prior(self):
-        """
-        # Count all the atomic variables in the KB (multiplied with inverse of length) (and same for negation)
-        # Store counts in priors dictionary
-        # Take sigmoid of difference of the two counts
-        # Store this in the KB dictionary as values. 
-        """
-        
-        # dictionary that stores the weighted counts of appearances for each atomic variable.
-        atomic_counters = {}
-        
+   
+   
+   
