@@ -17,7 +17,7 @@ class Resolution_Alg:
     
     def __init__(self, initial_clauses) -> None:
         self.literals = {} 
-        self.clauses = {} 
+        self.clauses = set()
         self.contradiction = False
         
         # Add all the initial clauses to the datastructure
@@ -33,7 +33,7 @@ class Resolution_Alg:
         # Add the clause to the literals dictionary
         for literal in clause: 
             if literal in self.literals: 
-                self.literals[literal] = self.literals[literal].add(new_clause)
+                self.literals[literal].add(new_clause) 
             else: 
                 self.literals[literal] = {new_clause}
     
@@ -45,7 +45,7 @@ class Resolution_Alg:
         # Remove the reference to the clause from the literals dictionary
         for literal in clause.literals: 
             self.literals[literal] = self.literals[literal] - {clause}
-            if self.literals[literal] == set(): 
+            if self.literals[literal] == set(): # TODO mebe do dis again 
                 del self.literals[literal] 
                 
         # Remove the clause form the set of clauses 
@@ -59,7 +59,8 @@ class Resolution_Alg:
             for clause in self.clauses: 
                 if len(clause.literals) == 1: 
                     atomic_found = True 
-                    self.remove_atomic(clause.literals[0])
+                    self.remove_atomic(list(clause.literals)[0])
+                    break
                     
     def remove_atomic(self, literal):
         # The atomic must be true, hence all clauses containing it are removed
@@ -67,15 +68,20 @@ class Resolution_Alg:
         for clause in true_clauses: 
             # We must remove all references to the clause that is removed 
             self.remove_clause(clause)
-        del self.literals[literal]
+        # try: # TODO remove this ALSO MAYBE DONT DO THIS! 
+        #     del self.literals[literal]
+        # except: 
+        #     print(f"These are the keys {self.literals.keys()}")
+        #     print(f"THIS IS WHERE THE DEATH COMMENCES {self.literals}, {self.literals[literal]}")
         
         # Next all clauses containing the negation of the atomic are updated 
-        clauses = self.literals[~literal]
-        for clause in clauses:
-            clause.literals = clause.literals - {~literal}
-            if clause.literals == set():
-                self.contradiction = True # If we get an empty clause, we have a contradiction and the clauses are unsatisfiable
-        del self.literals[~literal]
+        if ~literal in self.literals:
+            clauses = self.literals[~literal]
+            for clause in clauses:
+                clause.literals = clause.literals - {~literal}
+                if clause.literals == set():
+                    self.contradiction = True # If we get an empty clause, we have a contradiction and the clauses are unsatisfiable
+            del self.literals[~literal]
     
     def pop_literal(self):
         # Find a pair where both the literal and its negation are in the set
@@ -90,19 +96,19 @@ class Resolution_Alg:
             return True 
         
         # Else we must use resolution to remove it
-        to_remove = {}
+        to_remove = set()
         for clause1 in self.literals[next_literal]:
             for clause2 in self.literals[~next_literal]:
                 # Make the new clause 
-                resolution = Resolution_Alg.full_resolution(clause1, clause2)
+                resolution = Resolution_Alg.full_resolution(clause1.literals, clause2.literals, next_literal)
                 if resolution == set(): 
                     self.contradiction = True 
                 elif resolution != True: 
                     self.add_clause(resolution)
                 
                 # remove the old clauses
-                to_remove = to_remove.add(clause2)
-            to_remove = to_remove.add(clause1)
+                to_remove.add(clause2)
+            to_remove.add(clause1)
         
         for clause in to_remove: 
             self.remove_clause(clause)
@@ -117,10 +123,7 @@ class Resolution_Alg:
             if self.pop_literal(): 
                 break 
         
-        return self.contradiction
-
-
-
+        return not self.contradiction
 
 class Belief_Revisor():
     def to_cnf(expression): 
@@ -129,8 +132,11 @@ class Belief_Revisor():
         """
         # Make the set of clauses
         cnf = sympy.to_cnf(sympy.simplify(expression))
-        disjunctions = set(cnf.args)
-
+        if isinstance(cnf, sympy.And):
+            disjunctions = set(cnf.args) # TODO only if there is an "and" operator in the expression
+        else: 
+            disjunctions = {cnf}
+        
         # Remove trivial clauses 
         to_remove = set()
         for clause in disjunctions: 
@@ -150,7 +156,6 @@ class Belief_Revisor():
 
         return disjunction_sets
 
-    
     def __init__(self, initial_state) -> None:
         """
         Take in initial sentences and assign them weights and add them to KB
@@ -166,9 +171,9 @@ class Belief_Revisor():
         for sentence in initial_state:
             self.expansion(sentence)
 
-        # Contract with nothing to check if the initial KB is satisfiable
-        if not self.contract(None): 
-            print("You have given an unsatisfiable initial state. Please try again.") 
+        # Contract with nothing to check if the initial KB is satisfiable (that it is the same after contraction)
+        if not self.contract(None):  # TODO change this to check if the KB has changed when contracting 
+            print("You have given an unsatisfiable initial state. Please try again.") # TODO print out the dropped sentences
         
         
         # TODO: KB should initially be to_cnf(initial state).
@@ -190,26 +195,36 @@ class Belief_Revisor():
         # # Use resolution (to completion) on new_KB and a -> if contradiction remove a, otherwise add a to new_KB 
         # proceed to do it again with the rest.
         """
-  
-
+        # When contracting, one must add the negeted sentence to the KB
+        if new_sentence != None:
+            new_sentence = ~new_sentence
+            # Add new_sentence to new KB
+            new_KB = {new_sentence} 
+            new_KB_cnf = Belief_Revisor.to_cnf(new_sentence) 
+        else:
+            new_KB = set()
+            new_KB_cnf = []
+        
         # sort clauses
         sorted_KB = sorted(self.KB.keys(), key=lambda x: self.KB[x], reverse=True) 
-
-        # Add new_sentence to new KB
-        new_KB = set(new_sentence) 
-        new_KB_cnf = Belief_Revisor.to_cnf(new_sentence)
 
         for sentence in sorted_KB:
             cnf = Belief_Revisor.to_cnf(sentence)
             temp = new_KB_cnf + cnf
-            reso = self.resolution_alg(temp)
+            resolution = Resolution_Alg(temp)
+            reso = resolution.check_for_contradictions()
             if reso == True: 
                 new_KB.add(sentence)
                 new_KB_cnf = temp
+                
+        # Check if the KB has changed
+        changed = not (new_KB - {new_sentence}) == set(self.KB.keys())
 
         # Remove sentences in KB that are not in new_KB
-        self.KB = {key: value for key, value in self.KB.items() if key in new_KB}
-    
+        if changed:
+            self.KB = {key: value for key, value in self.KB.items() if key in new_KB}
+
+        return not changed 
         
 
     def revision(self, new_sentence):
@@ -224,5 +239,41 @@ class Belief_Revisor():
         # Expand
         self.expansion(new_sentence)
    
+    def entails(self, new_sentence):
+        """
+        See if KB entails "new_sentence"
+
+        Args:
+            new_sentence (sympy.Symbol): The sentence to check for entailment
+        
+        Returns:
+            bool: True if KB entails "new_sentence", False otherwise
+        """
+        # Use resolution to see if KB and -new_sentence is unsatisfiable
+        # Generate the CNF of -new_sentence and KB
+        list_of_clauses = Belief_Revisor.to_cnf(~new_sentence)
+        for sentence in self.KB.keys():
+            cnf = Belief_Revisor.to_cnf(sentence)
+            list_of_clauses += cnf
+        
+        # Use resolution to check for contradictions
+        resolution = Resolution_Alg(list_of_clauses)
+        reso = resolution.check_for_contradictions()
+        
+        return not reso # If there is a contradiction, then KB entails new_sentence, and we return True
    
-   
+p,q,r = sympy.symbols('p q r')
+expressions = {(p >> r), (~r >> q) & (q >> ~r)}
+expressions
+
+BR = Belief_Revisor(expressions)
+
+print(BR.entails(p))
+print(BR.entails(~p))
+
+
+BR.revision(p)
+BR.revision(~p)
+
+print(BR.entails(p))
+print(BR.entails(~p))
