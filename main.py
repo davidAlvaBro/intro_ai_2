@@ -1,5 +1,7 @@
 import sympy  
-import random
+
+# TODO do not input contradictions 
+# TODO do not input tautologies
 
 class Clause: 
         def __init__(self, literals) -> None:
@@ -45,7 +47,7 @@ class Resolution_Alg:
         # Remove the reference to the clause from the literals dictionary
         for literal in clause.literals: 
             self.literals[literal] = self.literals[literal] - {clause}
-            if self.literals[literal] == set(): # TODO mebe do dis again 
+            if self.literals[literal] == set():  
                 del self.literals[literal] 
                 
         # Remove the clause form the set of clauses 
@@ -133,11 +135,11 @@ class Belief_Revisor():
         # Make the set of clauses
         cnf = sympy.to_cnf(sympy.simplify(expression))
         if isinstance(cnf, sympy.And):
-            disjunctions = set(cnf.args) # TODO only if there is an "and" operator in the expression
+            disjunctions = set(cnf.args)
         else: 
             disjunctions = {cnf}
         
-        # Remove trivial clauses 
+        # Remove trivial clauses # TODO deal with this a better way 
         to_remove = set()
         for clause in disjunctions: 
             if sympy.simplify(clause) == True: 
@@ -156,6 +158,62 @@ class Belief_Revisor():
 
         return disjunction_sets
 
+    def generate_weight(sentence): 
+        """
+        Put into CNF format, then take the smallest clause and set the weight to the number of litterals in this.
+        This is to ensure that entrenchment postulates are satisfied. 
+
+        Args:
+            sentence (sympy.Symbol): the sentence for which a weight is to be generated
+        
+        Return: 
+            weight (int): The weight of the sentence
+        """
+        cnf = Belief_Revisor.to_cnf(sentence)
+        weight = min([len(clause) for clause in cnf])
+        return weight
+    
+    # TODO do not deal with tautologies and contradictions this way     
+    def check_if_tautology(sentence):
+        """
+        Args:
+            sentence (sympy.Symbol): the sentence to be checked
+        
+        Return:
+            bool: True if the sentence is a tautology, False otherwise
+        """
+        cnf = Belief_Revisor.to_cnf(sentence)
+        # If the sentence is a tautology, and because the cnf removes all trivial clauses, then the set of claueses is empty
+        if cnf == set():  
+            return True 
+        else: return False 
+
+    def check_if_contradiction(sentence): 
+        """
+        Args:
+            sentence (sympy.Symbol): the sentence to be checked
+        
+        Return:
+            bool: True if the sentence is a contradiction, False otherwise
+        """
+        # Use resolution to check for contradictions
+        list_of_clauses = Belief_Revisor.to_cnf(sentence)
+        resolution = Resolution_Alg(list_of_clauses)
+        reso = resolution.check_for_contradictions()
+        return reso
+        
+    def check_contradiction_and_tautology(sentence):
+        """
+        Provide the user with feedback about their sentence. 
+        """
+        if Belief_Revisor.check_if_tautology(sentence):
+            print(f"The sentence {sentence} is a tautology, hence it does not provide any information.")
+            return True
+        elif Belief_Revisor.check_if_contradiction(sentence):
+            print(f"The sentence {sentence} is a contradiction, hence it can never be true.")
+            return True
+        return False
+    
     def __init__(self, initial_state) -> None:
         """
         Take in initial sentences and assign them weights and add them to KB
@@ -166,23 +224,24 @@ class Belief_Revisor():
         # clause: probability
         # Initialization 
         self.KB = {}
+        self.counter = 0
         
         # Setup initial state
         for sentence in initial_state:
+            # if Belief_Revisor.check_contradiction_and_tautology(sentence): # TODO maybe do this
+            #     pass
             self.expansion(sentence)
 
         # Contract with nothing to check if the initial KB is satisfiable (that it is the same after contraction)
-        if not self.contract(None):  # TODO change this to check if the KB has changed when contracting 
-            print("You have given an unsatisfiable initial state. Please try again.") # TODO print out the dropped sentences
-        
-        
-        # TODO: KB should initially be to_cnf(initial state).
-        # maybe assert that initial state is consistent
+        if not self.contract(None): 
+            print("You have given an unsatisfiable initial state. The knowledge base is reduced to:")
+            print(self.KB)
         
     
     def expansion(self, new_sentence):
         """Adds the new sentence to KB (and assigns the prior)"""
-        self.KB[new_sentence] = random.random() # TODO make this something that makes sense 
+        self.KB[new_sentence] = (Belief_Revisor.generate_weight(new_sentence), self.counter)
+        self.counter += 1 
     
         
     def contract(self, new_sentence):
@@ -206,7 +265,8 @@ class Belief_Revisor():
             new_KB_cnf = []
         
         # sort clauses
-        sorted_KB = sorted(self.KB.keys(), key=lambda x: self.KB[x], reverse=True) 
+        # sorted_KB = sorted(self.KB.keys(), key=lambda x: self.KB[x], reverse=True) 
+        sorted_KB = sorted(self.KB.keys(), key=lambda x: (self.KB[x][0], -self.KB[x][1]), reverse=True)
 
         for sentence in sorted_KB:
             cnf = Belief_Revisor.to_cnf(sentence)
