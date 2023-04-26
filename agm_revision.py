@@ -89,8 +89,8 @@ class TestAGMReveision:
         BR.revision(phi2)
         # then B*φ = B*ψ
         assert len(BR.KB) == 1
-        assert BR.entails(phi1)
-        assert BR.entails(phi2)
+        assert BR.entails(phi1) == True
+        assert BR.entails(phi2) == True
         
     def test_superexpansion(self):
         p,q = sympy.symbols('p q')
