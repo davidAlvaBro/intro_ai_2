@@ -322,18 +322,3 @@ class Belief_Revisor():
         
         return not reso # If there is a contradiction, then KB entails new_sentence, and we return True
    
-p,q,r = sympy.symbols('p q r')
-expressions = {(p >> r), (~r >> q) & (q >> ~r)}
-expressions
-
-BR = Belief_Revisor(expressions)
-
-print(BR.entails(p))
-print(BR.entails(~p))
-
-
-BR.revision(p)
-BR.revision(~p)
-
-print(BR.entails(p))
-print(BR.entails(~p))
