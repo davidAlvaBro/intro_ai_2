@@ -7,7 +7,7 @@ class Mastermind:
     def __init__(self, colors, answer, code_length):
         self.colors = colors
         self.code_length = code_length
-        self.Mind = Belief_Revisor({})
+        self.Mind = Belief_Revisor([])
         self.answer = answer 
         self.literals = {color: [sympy.symbols(f"{color}{i}") for i in range(self.code_length)] for color in colors}
     
@@ -49,6 +49,7 @@ class Mastermind:
         counter = 0
         while True:
             # Generate guess 
+            print("Processing...")
             guess = self.generate_guess()
             
             counter += 1
