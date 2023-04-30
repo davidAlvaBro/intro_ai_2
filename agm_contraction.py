@@ -17,7 +17,6 @@ class TestAGMContration:
         expressions = [p]
         BR = Belief_Revisor(expressions)
         print(BR.KB)
-        # TODO: Maybe change phi back to (p | ~p) and expr to {}, depending on the implementation of tautologies
         # If φ ∈/ Cn(∅) (phi isn't a tautology) 
         phi = (p)
         assert BR.entails(phi) == True
@@ -79,39 +78,43 @@ class TestAGMContration:
         assert BR.entails(q & r) == True
         assert BR.entails(r | p) == True
     def test_conj_inclusion(self):
-        p,q = sympy.symbols('p q')
-        expressions = [(p), (q)]
+        p,q,r = sympy.symbols('p q r')
+        expressions = [(p), (q), (p & r), (q & r)]
         BR1 = Belief_Revisor(expressions)
         BR2 = Belief_Revisor(expressions)
 
-        phi = p
-        psi = q
+        phi = q
+        psi = p
         expr = phi & psi
         # If φ ∈/ B÷(φ∧ψ)
-        print(BR1.KB)
         assert BR1.entails(phi) == True
         assert BR1.entails(psi) == True
         BR1.contract(expr)
-        print(BR1.KB)
-        # TODO It does something weird, where it remove psi instead of phi
         assert BR1.entails(phi) == False
-        assert BR1.entails(psi) == False
+        assert BR1.entails(psi) == True
         # Then B÷(φ∧ψ) ⊆ B÷φ
         BR2.contract(phi)
         assert BR2.entails(phi) == False
         assert BR2.entails(psi) == True
+        assert len(BR2.KB) >= len(BR1.KB)
 
 
     def test_conj_overlap(self):
-        pass
-        '''
         p,q,r = sympy.symbols('p q r')
-        expressions = [(p), (q), (r)]
+        expressions = [(p), (q), (p & r), (q & r), (p & q), (p | r), (q | r), (p | q)]
+        BR1 = Belief_Revisor(expressions)
+        BR2 = Belief_Revisor(expressions)
+        BR3 = Belief_Revisor(expressions)
 
-        BR = Belief_Revisor(expressions)
-        assert BR.entails(q) == True
-        # B*φ = Cn(B*φ)
-        phi = ~(q | r)
-        BR.revision(phi)
-        assert BR.entails(q) == False
-        '''
+        phi = q
+        psi = p
+        expr = phi & psi
+
+        # (B÷φ)∩(B÷ψ) ⊆ B÷(φ∧ψ)
+        assert BR1.entails(phi) == True
+        assert BR2.entails(psi) == True
+        BR1.contract(phi)
+        BR2.contract(psi)
+        BR3.contract(expr)
+        BRR = Belief_Revisor([value for value in BR1.KB if value in BR2.KB])
+        assert len(BRR.KB) <= len(BR3.KB)

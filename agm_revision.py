@@ -4,7 +4,7 @@ import sympy
 class TestAGMReveision:
     def test_closure(self):
         p,q,r = sympy.symbols('p q r')
-        expressions = {(p), (q), (r)}
+        expressions = [(p), (q), (r)]
 
         BR = Belief_Revisor(expressions)
         assert BR.entails(q) == True
@@ -14,7 +14,7 @@ class TestAGMReveision:
         assert BR.entails(q) == False
     def test_success(self):
         p,q = sympy.symbols('p q')
-        expressions = {}
+        expressions = []
         BR = Belief_Revisor(expressions)
         # φ ∈ B*φ
         phi = (p & q)
@@ -23,7 +23,7 @@ class TestAGMReveision:
         assert BR.entails(phi) == True
     def test_inclusion(self):
         p,q = sympy.symbols('p q')
-        expressions = {(~p), (q)}
+        expressions = [(~p), (q)]
         BR1 = Belief_Revisor(expressions)
         BR2 = Belief_Revisor(expressions)
         phi = p
@@ -40,7 +40,7 @@ class TestAGMReveision:
         assert BR2.entails(~p) == False
     def test_vacuity(self):
         p,q = sympy.symbols('p q')
-        expressions = {(q)}
+        expressions = [(q)]
         BR1 = Belief_Revisor(expressions)
         BR2 = Belief_Revisor(expressions)
         phi = p
@@ -56,7 +56,7 @@ class TestAGMReveision:
         assert BR2.entails(~phi) == False
     def test_consistency(self):
         p,q = sympy.symbols('p q')
-        expressions = {}
+        expressions = []
         BR = Belief_Revisor(expressions)
         assert BR.entails(p | q) == False
         # if φ is consistent
@@ -76,11 +76,9 @@ class TestAGMReveision:
         assert BR.entails(p & ~p) == False
         print(BR.KB)
         assert 1 == 2
-
-        
     def test_extensionality(self):
         p,q = sympy.symbols('p q')
-        expressions = {}
+        expressions = []
         BR = Belief_Revisor(expressions)
         # If (φ ↔ ψ) ∈ Cn(∅)
         phi1 = (p & q)
@@ -94,7 +92,7 @@ class TestAGMReveision:
         
     def test_superexpansion(self):
         p,q = sympy.symbols('p q')
-        expressions = {}
+        expressions = []
 
         # (B*φ)+ψ
         BR = Belief_Revisor(expressions)
@@ -107,7 +105,7 @@ class TestAGMReveision:
 
     def test_subexpansion(self):
         p,q = sympy.symbols('p q')
-        expressions = {}
+        expressions = []
         # If ¬ψ ∈/ B*φ
         BR1 = Belief_Revisor(expressions)
         BR1.revision(p)
