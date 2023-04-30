@@ -110,12 +110,11 @@ class TestAGMContration:
         psi = p
         expr = phi & psi
 
-        # Comment about what we assert
+        # (B÷φ)∩(B÷ψ) ⊆ B÷(φ∧ψ)
         assert BR1.entails(phi) == True
-        assert BR1.entails(psi) == True
+        assert BR2.entails(psi) == True
         BR1.contract(phi)
         BR2.contract(psi)
         BR3.contract(expr)
         BRR = Belief_Revisor([value for value in BR1.KB if value in BR2.KB])
-        # Then B÷(φ∧ψ) ⊆ B÷φ
         assert len(BRR.KB) <= len(BR3.KB)
