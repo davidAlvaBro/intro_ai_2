@@ -226,21 +226,58 @@ class Belief_Revisor():
 
         return disjunction_sets
 
-    def generate_weight(sentence): # TODO change this function to use different weights dependent on user input 
+    def generate_weight(sentence:sympy.Basic, weight_type): # TODO change this function to use different weights dependent on user input 
         """
         Put into CNF format, then take the smallest clause and set the weight to the number of litterals in this.
         This is to ensure that entrenchment postulates are satisfied. 
 
         Args:
             sentence (sympy.Symbol): the sentence for which a weight is to be generated
+            weight_type (int): the type of weight to be generated:
+                0: The weight is the fraction of possible worlds in which the sentence is true
+                1: The weight is the fraction of possible worlds in which the sentence is false
+                2: The weight is the estimated probability of the sentence being true
+                        - This is done by using the approximated probabilities of the literals in the sentence.
         
         Return: 
             weight (int): The weight of the sentence
         """
-        cnf = Belief_Revisor.to_cnf(sentence)
-        weight = min([len(clause) for clause in cnf])
-        return weight
-    
+        if weight_type == 0:
+            worlds = list(Belief_Revisor._compute_truth_tables(sentence))
+            return sum([x==True for x in worlds])/len(worlds)
+        if weight_type == 1:
+            worlds = list(Belief_Revisor._compute_truth_tables(sentence))
+            return 1 - sum([x==True for x in worlds])/len(worlds)
+        if weight_type == 2:
+            raise NotImplementedError("Weight type 2 is not implemented yet")
+
+    def _compute_truth_tables(sentence: sympy.Basic):
+        """
+        Compute the truth table for a sentence. 
+        This is done by first converting the sentence to CNF form, then computing the truth table for each clause.
+        The truth table for the sentence is then the conjunction of all these truth tables. 
+
+        Args:
+            sentence (sympy.Symbol): the sentence for which a truth table is to be generated
+        
+        Return: 
+            truth_table (sympy.Symbol): the truth table for the sentence
+        """
+
+        def get_table(numvars):
+            if numvars == 1:
+                yield [True]
+                yield [False]
+            else:
+                for i in get_table(numvars-1):
+                    yield i + [True]
+                    yield i + [False]
+
+        literals = list(sentence.atoms(sympy.Symbol))
+
+        for truth_values in get_table(len(literals)):
+            values = dict(zip(literals,truth_values))
+            yield sentence.subs(values)  
 
     def check_if_contradiction(sentence): 
         """
@@ -278,7 +315,7 @@ class Belief_Revisor():
             return True
         return False
     
-    def __init__(self, initial_state) -> None:
+    def __init__(self, initial_state, weight_type) -> None:
         """
         Creates an instance of the Belief_Revisor class.
         The belief base is initialized with an initial assignment of sentences.
@@ -287,9 +324,11 @@ class Belief_Revisor():
         
         Args: 
             initial_state (list): A list of sentences to be added to the KB
+            weight_type_str (str): A string describing the type of weight to be used - see Belief_Revisor.generate_weight for more information
         """
         self.KB = {}
         self.counter = 0
+        self.weight_type = weight_type
         
         # Setup initial state (remove tautologies and contradictions)
         for sentence in initial_state:
@@ -305,7 +344,7 @@ class Belief_Revisor():
         if Belief_Revisor.check_contradiction_and_tautology(new_sentence):
             pass
         else: 
-            self.KB[new_sentence] = (Belief_Revisor.generate_weight(new_sentence), self.counter)
+            self.KB[new_sentence] = (Belief_Revisor.generate_weight(new_sentence, self.weight_type), self.counter)
             self.counter += 1 
         
     def contract(self, new_sentence):
@@ -404,25 +443,37 @@ class Belief_Revisor():
         
         # If there is a contradiction, then KB entails new_sentence
         return reso 
-    
-        
-p,q,r = sympy.symbols('p q r')
-expressions = {(p >> r), (~r >> q) & (q >> ~r)}
-# expressions
-expressions = [(p | ~p), (p >> r), (~r >> q) & (q >> ~r), (~p >> r), (~r)]
-
-BR = Belief_Revisor(expressions)
-
-# print(BR.KB, BR.entails(p))
-# print(BR.KB, BR.entails(~p))
 
 
-BR.revision((p | ~p))
-BR.revision((p & ~p))
-# print(BR.KB, BR.entails(p), BR.entails(~p))
 
-# BR.revision(p)
-# print(BR.KB, BR.entails(p), BR.entails(~p))
 
-# print(BR.KB, BR.entails(p))
-# print(BR.KB, BR.entails(~p))
+if __name__ == "__main__":
+            
+    # p,q,r = sympy.symbols('p q r')
+    # expressions = {(p >> r), (~r >> q) & (q >> ~r)}
+
+    # # expressions
+    # expressions = [(p | ~p), (p >> r), (~r >> q) & (q >> ~r), (~p >> r), (r & ~r)]
+    # for sentence in expressions:
+    #     print(Belief_Revisor.generate_weight(sentence, 0))
+
+    a, b, c, d, e, f, g, h, i, j, k, l, m, n = sympy.symbols('a b c d e f g h i j k l m n')
+    true_rule = (c >> (a & b)) & (d >> c)
+
+    print(Belief_Revisor.generate_weight(true_rule, 0))
+
+    # BR = Belief_Revisor(expressions)
+
+    # # print(BR.KB, BR.entails(p))
+    # # print(BR.KB, BR.entails(~p))
+
+
+    # BR.revision((p | ~p))
+    # BR.revision((p & ~p))
+    # # print(BR.KB, BR.entails(p), BR.entails(~p))
+
+    # # BR.revision(p)
+    # # print(BR.KB, BR.entails(p), BR.entails(~p))
+
+    # # print(BR.KB, BR.entails(p))
+    # # print(BR.KB, BR.entails(~p))
