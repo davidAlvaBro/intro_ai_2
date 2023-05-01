@@ -20,6 +20,9 @@ if __name__ == "__main__":
     max_experiments = 0
 
 
+
+
+
     for path in paths:
 
         threshold = float(os.path.basename(path).split("_")[0])
@@ -39,6 +42,33 @@ if __name__ == "__main__":
     #         data["KB_and_ground_truth_worlds_ratios"] = np.array(data["KB_and_ground_truth_worlds_ratios"])
     #         data["KB_sizes"] = np.array(data["KB_sizes"])
     #         max_experiments = max(max_experiments, len(data["KB_worlds_ratios"]))
+
+
+    KB_worlds_ratios = experiments[0.95]["KB_worlds_ratios"][6]
+    for i, alpha, thickness in zip(range(3), [0.2, 0.5, 1], [5,3,1]):
+        plt.plot(KB_worlds_ratios[:, i], label=f"weight_type {i}", alpha=alpha, linewidth=thickness)
+    
+    plt.xlabel("Sentence number")
+    plt.ylabel("Satisfiability ratio")
+    plt.suptitle("Ground truth, threshold 0.95")
+
+    plt.savefig("KB_worlds_ratios_example.png")
+    plt.show()
+
+
+    KB_and_ground_truth_worlds_ratios = experiments[0.95]["KB_and_ground_truth_worlds_ratios"][6]
+    for i, alpha, thickness in zip(range(3), [0.2, 0.5, 1], [5,3,1]):
+        plt.plot(KB_and_ground_truth_worlds_ratios[:, i], label=f"weight_type {i}", alpha=alpha, linewidth=thickness)
+    
+    plt.xlabel("Sentence number")
+    plt.ylabel("Satisfiability ratio")
+
+    plt.suptitle("Ground truth $\wedge$ belief base, threshold 0.95")
+    plt.savefig("KB_and_ground_truth_worlds_ratios_example.png")
+    plt.show()
+    
+            
+    quit()
 
 
     fig = plt.figure(figsize=(10,10))
