@@ -183,7 +183,7 @@ class Resolution_Alg:
             if self.pop_literal(): 
                 break 
         
-        return self.contradiction # TODO Fuck with not everywhere -> on it
+        return self.contradiction 
 
 class Belief_Revisor():
     def to_cnf(sentence): 
@@ -226,7 +226,7 @@ class Belief_Revisor():
 
         return disjunction_sets
 
-    def generate_weight(sentence:sympy.Basic, weight_type): # TODO change this function to use different weights dependent on user input 
+    def generate_weight(sentence:sympy.Basic, weight_type): 
         """
         Put into CNF format, then take the smallest clause and set the weight to the number of litterals in this.
         This is to ensure that entrenchment postulates are satisfied. 
@@ -345,23 +345,6 @@ class Belief_Revisor():
             print("You have given an unsatisfiable initial state. The knowledge base is reduced to:")
             print(self.KB)
 
-    # TODO: This was lauge playing - remove later
-
-    # def __init__(self, initial_state, weight_type) -> None:
-    #     """
-    #     Creates an instance of the Belief_Revisor class.
-    #     The belief base is initialized with an initial assignment of sentences.
-    #     Each are checked if they are a tautology or contradiction, and if not they are added to the KB.
-    #     At last the KB is checked for satisfiability, and if it is not satisfiable the KB is reduced to one that is with contraction.
-        
-    #     Args: 
-    #         initial_state (list): A list of sentences to be added to the KB
-    #         weight_type_str (str): A string describing the type of weight to be used - see Belief_Revisor.generate_weight for more information
-    #     """
-    #     self.KB = {}
-    #     self.counter = 0
-    #     self.weight_type = weight_type
-    #     self.revision(sympy.And(*initial_state))
         
     def expansion(self, new_sentence):
         """Adds the new sentence to KB and assigns the prior (if not a tautology or contradiction)"""
@@ -457,34 +440,6 @@ class Belief_Revisor():
         return changed, count_removed
 
 
-    
-    # # TODO: This was lauge playing - remove later
-    # def revision(self, new_sentence):
-
-    #     if sympy.satisfiable(~new_sentence) is False:
-    #         return False
-    #     if sympy.satisfiable(new_sentence) is False:
-    #         return False
-    #     if new_sentence == None:
-    #         return False
-        
-    #     output = []
-
-    #     sorted_KB = sorted(self.KB.keys(), key=lambda x: self.KB[x][0], reverse=True)
-    #     changed = False
-    #     for sentence in sorted_KB:
-    #         if sympy.satisfiable(sympy.And(*output, sentence, new_sentence)) is not False:
-    #             output.append(sentence)
-    #         else:
-    #             changed = True
-    #     self.KB = {key: self.KB[key] for key in output}
-
-    #     self.KB[new_sentence] = (Belief_Revisor.generate_weight(new_sentence, self.weight_type), self.counter)
-    #     self.counter += 1 
-
-    #     return changed
-
-   
     def entails(self, new_sentence):
         """
         Check if KB entails "new_sentence".
@@ -519,29 +474,3 @@ if __name__ == "__main__":
 
     print(sympy.to_cnf((q | r) & (~q | ~r)))
 
-
-    # # expressions
-    # expressions = [(p | ~p), (p >> r), (~r >> q) & (q >> ~r), (~p >> r), (r & ~r)]
-    # for sentence in expressions:
-    #     print(Belief_Revisor.generate_weight(sentence, 0))
-
-    # a, b, c, d, e, f, g, h, i, j, k, l, m, n = sympy.symbols('a b c d e f g h i j k l m n')
-    # true_rule = (c >> (a & b)) & (d >> c)
-
-    # print(Belief_Revisor.generate_weight(true_rule, 0))
-
-    # BR = Belief_Revisor(expressions)
-
-    # # print(BR.KB, BR.entails(p))
-    # # print(BR.KB, BR.entails(~p))
-
-
-    # BR.revision((p | ~p))
-    # BR.revision((p & ~p))
-    # # print(BR.KB, BR.entails(p), BR.entails(~p))
-
-    # # BR.revision(p)
-    # # print(BR.KB, BR.entails(p), BR.entails(~p))
-
-    # # print(BR.KB, BR.entails(p))
-    # # print(BR.KB, BR.entails(~p))

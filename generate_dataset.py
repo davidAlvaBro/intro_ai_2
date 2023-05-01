@@ -74,9 +74,6 @@ def generate_random_sentences(ground_truth_KB: sympy.Basic, min_clauses, max_cla
 
 
 
-
-
-
 def generate_dataset(ground_truth_params=dict(n_clauses=6, n_literals_pr_clause=2),
                      random_sentences_params=dict(min_clauses=1, max_clauses=3, min_literals=2, max_literals=3, n_sentences=1000),
                      max_n_literals=8):
