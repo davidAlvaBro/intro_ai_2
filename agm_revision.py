@@ -57,25 +57,20 @@ class TestAGMReveision:
     def test_consistency(self):
         p,q = sympy.symbols('p q')
         expressions = []
-        BR = Belief_Revisor(expressions)
-        assert BR.entails(p | q) == False
+        BR1 = Belief_Revisor(expressions)
+        assert BR1.entails(p | q) == False
         # if φ is consistent
         phi = (p | q)
-        BR.revision(phi)
+        BR1.revision(phi)
         # B*φ is consistent
-        assert BR.entails(p | q) == True
-        
-
-        #TODO Må vi godt have inconsistent ting i vores KB? entails siger at det ikke entailer, men det er i vores KB alligevel.
+        assert BR1.entails(p | q) == True
         # Check if φ is inconsistent
-        BR = Belief_Revisor(expressions)
-        assert BR.entails(p) == False
+        BR2 = Belief_Revisor(expressions)
+        assert BR2.entails(p) == False
         phi = (p & ~p)
-        BR.revision(phi)
+        BR2.revision(phi)
         # B*φ is inconsistent
         assert BR.entails(p & ~p) == False
-        print(BR.KB)
-        assert 1 == 2
     def test_extensionality(self):
         p,q = sympy.symbols('p q')
         expressions = []
@@ -88,8 +83,7 @@ class TestAGMReveision:
         # then B*φ = B*ψ
         assert len(BR.KB) == 1
         assert BR.entails(phi1) == True
-        assert BR.entails(phi2) == True
-        
+        assert BR.entails(phi2) == True  
     def test_superexpansion(self):
         p,q = sympy.symbols('p q')
         expressions = []
@@ -102,7 +96,6 @@ class TestAGMReveision:
         # B*(φ∧ψ)⊆(B*φ)+ψ
         phi = p & q
         assert BR.entails(phi) == True
-
     def test_subexpansion(self):
         p,q = sympy.symbols('p q')
         expressions = []
