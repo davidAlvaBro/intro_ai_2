@@ -70,7 +70,6 @@ if __name__ == "__main__":
     plt.savefig("KB_and_ground_truth_worlds_ratios_example.png")
     plt.show()
 
-    quit()
 
     fig = plt.figure(figsize=(10,10))
 
