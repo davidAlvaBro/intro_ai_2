@@ -97,8 +97,6 @@ class TestAGMContration:
         assert BR2.entails(phi) == False
         assert BR2.entails(psi) == True
         assert len(BR2.KB) >= len(BR1.KB)
-
-
     def test_conj_overlap(self):
         p,q,r = sympy.symbols('p q r')
         expressions = [(p), (q), (p & r), (q & r), (p & q), (p | r), (q | r), (p | q)]
