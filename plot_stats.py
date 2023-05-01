@@ -66,9 +66,6 @@ if __name__ == "__main__":
     plt.suptitle("Ground truth $\wedge$ belief base, threshold 0.95")
     plt.savefig("KB_and_ground_truth_worlds_ratios_example.png")
     plt.show()
-    
-            
-    quit()
 
 
     fig = plt.figure(figsize=(10,10))
@@ -184,12 +181,6 @@ if __name__ == "__main__":
     plt.show()
 
 
-
-
-
-
-
-    quit()
 
     fig = plt.figure(figsize=(10,10))
 
