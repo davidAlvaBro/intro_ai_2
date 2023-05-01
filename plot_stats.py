@@ -50,6 +50,8 @@ if __name__ == "__main__":
     
     plt.xlabel("Sentence number")
     plt.ylabel("Satisfiability ratio")
+    plt.legend()
+
     plt.suptitle("Ground truth, threshold 0.95")
 
     plt.savefig("KB_worlds_ratios_example.png")
@@ -62,6 +64,7 @@ if __name__ == "__main__":
     
     plt.xlabel("Sentence number")
     plt.ylabel("Satisfiability ratio")
+    plt.legend()
 
     plt.suptitle("Ground truth $\wedge$ belief base, threshold 0.95")
     plt.savefig("KB_and_ground_truth_worlds_ratios_example.png")
