@@ -5,7 +5,7 @@ class TestAGMContration:
     def test_closure(self):
         p,q = sympy.symbols('p q')
         expressions = [(p & ~q)]
-        BR = Belief_Revisor(expressions)
+        BR = Belief_Revisor(expressions, 3)
         assert BR.entails(~q) == True
 
         phi = ~q
@@ -15,7 +15,7 @@ class TestAGMContration:
     def test_success(self):
         p = sympy.symbols('p')
         expressions = [p]
-        BR = Belief_Revisor(expressions)
+        BR = Belief_Revisor(expressions, 3)
         print(BR.KB)
         # If φ ∈/ Cn(∅) (phi isn't a tautology) 
         phi = (p)
@@ -26,7 +26,7 @@ class TestAGMContration:
     def test_inclusion(self):
         p,q = sympy.symbols('p q')
         expressions = [(p), (q)]
-        BR = Belief_Revisor(expressions)
+        BR = Belief_Revisor(expressions, 3)
         phi = p
         assert BR.entails(q) == True
         assert BR.entails(phi) == True
@@ -38,7 +38,7 @@ class TestAGMContration:
         p,q,r = sympy.symbols('p q r')
         # If φ ∈/ Cn(B)
         expressions = [(q & r)]
-        BR = Belief_Revisor(expressions)
+        BR = Belief_Revisor(expressions, 3)
         assert BR.entails(q & r) == True
         # Then B ÷ φ = B
         phi = p
@@ -47,8 +47,8 @@ class TestAGMContration:
     def test_extensionality(self):
         p,q,r  = sympy.symbols('p q r')
         expressions = [(p & q),(r)]
-        BR1 = Belief_Revisor(expressions)
-        BR2 = Belief_Revisor(expressions)
+        BR1 = Belief_Revisor(expressions, 3)
+        BR2 = Belief_Revisor(expressions, 3)
         # If (φ ↔ ψ) ∈ Cn(∅)
         phi1 = (p & q)
         phi2 = (q & p)
@@ -66,7 +66,7 @@ class TestAGMContration:
         p,q,r = sympy.symbols('p q r')
         expressions = [(p & q), (q & r), (r | p)]
 
-        BR = Belief_Revisor(expressions)
+        BR = Belief_Revisor(expressions, 3)
         assert BR.entails(p & q) == True
         assert BR.entails(q & r) == True
         assert BR.entails(r | p) == True
@@ -80,8 +80,8 @@ class TestAGMContration:
     def test_conj_inclusion(self):
         p,q,r = sympy.symbols('p q r')
         expressions = [(p), (q), (p & r), (q & r)]
-        BR1 = Belief_Revisor(expressions)
-        BR2 = Belief_Revisor(expressions)
+        BR1 = Belief_Revisor(expressions, 3)
+        BR2 = Belief_Revisor(expressions, 3)
 
         phi = q
         psi = p
@@ -100,9 +100,9 @@ class TestAGMContration:
     def test_conj_overlap(self):
         p,q,r = sympy.symbols('p q r')
         expressions = [(p), (q), (p & r), (q & r), (p & q), (p | r), (q | r), (p | q)]
-        BR1 = Belief_Revisor(expressions)
-        BR2 = Belief_Revisor(expressions)
-        BR3 = Belief_Revisor(expressions)
+        BR1 = Belief_Revisor(expressions, 3)
+        BR2 = Belief_Revisor(expressions, 3)
+        BR3 = Belief_Revisor(expressions, 3)
 
         phi = q
         psi = p
@@ -114,5 +114,5 @@ class TestAGMContration:
         BR1.contract(phi)
         BR2.contract(psi)
         BR3.contract(expr)
-        BRR = Belief_Revisor([value for value in BR1.KB if value in BR2.KB])
+        BRR = Belief_Revisor([value for value in BR1.KB if value in BR2.KB], 3)
         assert len(BRR.KB) <= len(BR3.KB)

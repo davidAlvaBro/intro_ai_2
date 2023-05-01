@@ -395,7 +395,7 @@ class Belief_Revisor():
        
         
         if new_sentence != None and Belief_Revisor.check_contradiction_and_tautology(new_sentence):
-            return False
+            return False, 0
         
         # Add the negated new sentence to new_KB 
         if new_sentence != None:
