@@ -11,3 +11,6 @@ Test the AGM postulates in `agm_contraction.py` and `agm_revision.py` by running
 
 # Mastermind
 Try out the game mastermind by importing `Mastermind` from `mastermind.py`. This agent only needs to be given the colors you want to use (any text will do), the code length and the answer. Then you can use `solve` for the agent to crack the code (with the belief base implementation). 
+
+## Statistics 
+With `run_experiment.py` and `plot_stats.py` one can generate the experiments that we use in the report. (run them in that order)
