@@ -3,7 +3,6 @@ import sympy
 import random 
 import itertools
 
-
 class Mastermind:
     def __init__(self, colors, answer, code_length):
         self.colors = colors
@@ -27,7 +26,6 @@ class Mastermind:
         self.Mind = Belief_Revisor(initial_expressions)
         
     def logical_sentence(self, position_set, color_set, not_correct_set):
-        
         # Generate propositional sentence for the position
         position_proposition = sympy.And(*set([self.literals[col][place] for col, place in position_set]))
         
@@ -49,26 +47,21 @@ class Mastermind:
         
         # Make this into one propositional sentence
         propositional_sentence = sympy.And(position_proposition, color_proposition, wrong_color_proposition)
-        # print(propositional_sentence) # TODO remove debugging
         return propositional_sentence
         
     def check_guess(self, guess):
-        # Check guess and return new information
-        # to_update = []
-        # TODO Change for loop to elif logic to test if any are correct colors and positions
-        '''
-        for i in range(self.code_length):
-            if guess[i] == self.answer[i]:
-                # If this part of the guess is correct, the color and position is added to KB, 
-                # and the negation of all other colors in that position is added aswell.
-                to_update.append(self.literals[guess[i]][i] & sympy.And(*set([~self.literals[color][i] for color in self.colors if color != guess[i]])) )
-            elif guess[i] in answer:
-                # That the color exists is added to the KB (but not in this position)
-                to_update.append(sympy.Or(*set([self.literals[guess[i]][j] for j in range(self.code_length) if j != i])) & ~self.literals[guess[i]][i])
-            else:
-                # That the color does not exists is added to the KB 
-                to_update.append(sympy.And(*set([~self.literals[guess[i]][j] for j in range(self.code_length)])))
-        '''
+        """
+        Function takes in a guess and outputs the new propositional logic information that was learned
+        First it checks how many colors and positions are correct in the guess
+        then it constructs all possible sentences that could have given this output in the form of propositional logic
+        This is passed logical_sentence() which returns the propositional sentence
+        
+        Args:
+            guess (list): list of colors that is the guess
+        
+        Returns:
+            propositional_sentence (sympy sentence): sentence that encaptures the information from the guess
+        """
         correct_color = 0
         correct_position = 0
         temp_answer = self.answer.copy()
@@ -108,54 +101,15 @@ class Mastermind:
         return propositional_sentence
         
         
-            
-        
-        # # If no correct colors were guessed
-        # if correct_color + correct_position == 0:
-        #     for i in range(self.code_length):
-        #         to_update.append(sympy.And(*set([~self.literals[guess[i]][j] for j in range(self.code_length)])))
-        # if correct_position == 0:
-        #     for i in range(self.code_length):
-        #         to_update.append(sympy.And(*set([~self.literals[color][i] for color in self.colors if color == guess[i]])))
-        # if correct_color == 4:
-        #     for i in range(self.code_length):
-        #         to_update.append(sympy.Or(*set([self.literals[guess[i]][j] for j in range(self.code_length) if j != i])) & ~self.literals[guess[i]][i])
-        # if correct_color + correct_position == 4:
-        #     for i in range(self.code_length):
-        #         to_update.append(sympy.Or(*set([self.literals[guess[i]][j] for j in range(self.code_length)])))
-
-        # # Get information from number of colors
-        # if correct_color == 1 and correct_position == 0:
-        #     pass
-        # elif correct_color == 2 and correct_position == 0:
-        #     pass
-        # elif correct_color == 3 and correct_position == 0:
-        #     pass
-
-        # Never repeat the same sequence if it isn't correct.
-        # TODO Might not work completely. Sometimes it is unable to generate a new guess after this
-        # if correct_position != 4:
-        #     to_update.append(sympy.Not(sympy.And(*set([self.literals[guess[i]][i] for i in range(self.code_length)]))))
-
-
-        # return to_update
 
     def generate_guess(self):
         # Generate feasible guess (w.r.t. KB)
         guess = []
-        
-        # for i in range(self.code_length): 
-        #     found_color = False 
-        #     colors_to_try = set(self.colors)
-        #     while not found_color:
-        #         # Try a new color until we have one where KB does not entail the negation.
-        #         color = random.choice(list(colors_to_try))
-        #         colors_to_try -= {color}
-        #         found_color = not self.Mind.entails(~self.literals[color][i])
-        #     guess.append(color)
         # Find a guess g, where not g is not entailed by KB
         while guess == []: 
-            # temp_guess = random.sample(self.colors, self.code_length)
+            # temp_guess = random.sample(self.colors, self.code_length) # This is the time consuming way
+            
+            # This is the fast way that only tries guesses that are feasible, but is not using the agent as much
             KB = sympy.And(*set(self.Mind.KB.keys()))
             possibility = sympy.satisfiable(KB)
             # Get the literals that are true
@@ -208,9 +162,9 @@ class Mastermind:
 
 # Setup
 
-for i in range(1):
+for i in range(100):
     colors = ["red", "blue", "green", "yellow", "orange", "purple"] 
-    code_length = 4
+    code_length = 3
 
     answer = random.sample(colors, code_length)
 
@@ -218,5 +172,3 @@ for i in range(1):
     mastermind = Mastermind(colors, answer, code_length)
     mastermind.solve()
 
-
-# TODO Store earlier guesses, and check if previously have had a guess with same x correct colors/positions, with x identical placed pins and all other different, then those x must be correct
