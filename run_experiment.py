@@ -121,7 +121,7 @@ if __name__ == "__main__":
     paths = os.listdir("datasets")
     paths = [os.path.join("datasets", path) for path in paths]
     for threshold in [0.8, 0.9, 0.95, 0.98]:
-        run_experiments(threshold, paths, 10, weight_types=(0,1))
+        run_experiments(threshold, paths, 10, weight_types=(0, 1, 3))
 
 
     # a, b, c, d, e, f, g, h, i, j, k, l, m, n, o = sympy.symbols('a b c d e f g h i j k l m n o')

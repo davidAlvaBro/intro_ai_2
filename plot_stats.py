@@ -36,11 +36,24 @@ def plot_stats(path, name=None):
     plotter(scores, ground_truth_KB, name or os.path.basename(path))
 
 if __name__ == "__main__":
-    paths = os.listdir("stats")
-    paths = [os.path.join("stats", path) for path in paths]
-    for path in paths:
-        scores, generated, ground_truth_KB, count_removedss = load_stats(path)
-        name = os.path.basename(path)
-        print(name)
-        print(sum(count_removedss))
-        plotter(scores, ground_truth_KB, name)
+    # paths = os.listdir("stats")
+    # paths = [os.path.join("stats", path) for path in paths]
+    # for path in paths:
+    #     scores, generated, ground_truth_KB, count_removedss = load_stats(path)
+    #     name = os.path.basename(path)
+    #     print(name)
+    #     print(sum(count_removedss))
+    #     plotter(scores, ground_truth_KB, name)
+
+    path = "stats/0.95_id=9"
+
+    ground_truth_KBs = np.load(os.path.join(path, "ground_truth_KBs.npy"), allow_pickle=True)
+    KB_worlds_ratios = np.load(os.path.join(path, "KB_worlds_ratios.npy"), allow_pickle=True)
+    KB_and_ground_truth_worlds_ratios = np.load(os.path.join(path, "KB_and_ground_truth_worlds_ratios.npy"), allow_pickle=True)
+
+    for i in range(3):
+        plt.plot(KB_worlds_ratios[:,i], label="KB_worlds_ratios, weight_type={}".format(i))
+        plt.plot(KB_and_ground_truth_worlds_ratios[:,i], label="KB_and_ground_truth_worlds_ratios, weight_type={}".format(i))
+        plt.legend()
+        plt.suptitle(i)
+        plt.show()
